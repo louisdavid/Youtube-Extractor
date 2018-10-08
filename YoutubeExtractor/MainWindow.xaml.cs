@@ -52,7 +52,17 @@ namespace YoutubeExtractor
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
             }
         }
-
+/********************************************************************************************************************************************
+*                                                       DOWNLOAD URL FUNCTION                                                               *
+* Function that downloads every url from passed string array and places them in the users download library under Music Folder. Also creates *
+* a Music Folder if it doesn't already exist.*
+********************************************************************************************************************************************/
+        private void downloadURL(string[] url) {
+            string folderPath = downloadsPath + @"\Music";
+            if(FileOrDirectoryExists(folderPath)) {
+                Directory.CreateDirectory(folderPath);
+            }
+        }
 /********************************************************************************************************************************************
 *                                                       CHANGE FILE PATH FUNCTION                                                           *
 * Changes the File Path in the label on screen and in the users saved label path.                                                           *                                                                              *
@@ -108,11 +118,19 @@ namespace YoutubeExtractor
                 string[] url = urlList.ToArray();
                 //ADD FUNCTION CLEAN URL AS TO HAVE AN ARRAY OF ONLY VALID YOUTUBE LINKS LIKE https://www.youtube.com/watch?v=IG8NfUMlt-k
                 //ADD FUNCTION THAT TAKES URL ARRAY AND DOWNLOADS ALL THE FILES
-                lbl_status.Foreground = Brushes.Green;
-                lbl_status.Content = "Sucess!";
+                try {
+                    downloadURL(url);
+                    lbl_status.Foreground = Brushes.Green;
+                    lbl_status.Content = "Sucess!";
+                }
+                catch (Exception ex) {
+                    lbl_status.Foreground = Brushes.Red;
+                    lbl_status.Content = "Error: An error accurred during the file download";
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
+                }
             } else {
                 lbl_status.Foreground = Brushes.Red;
-                lbl_status.Content = "Error: Given File Path Invalid.";
+                lbl_status.Content = "Error: Given File Path Invalid";
                 changeFilePath("");
             }
             btn_Go.IsEnabled = true;
