@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.14
+VisualStudioVersion = 15.0.28010.2041
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YoutubeExtractor", "YoutubeExtractor\YoutubeExtractor.csproj", "{FE90A3D0-D1F3-4D15-96A4-6A04FF34E0E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Youtube-Extractor", "Youtube-Extractor\Youtube-Extractor.csproj", "{FE90A3D0-D1F3-4D15-96A4-6A04FF34E0E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B21443AB-525A-41D0-A4E4-173CB09AC91E}
 	EndGlobalSection
 EndGlobal

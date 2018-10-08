@@ -28,7 +28,6 @@ using Microsoft.Win32;
 * LAST MODIFIED: 08/10/2018                                                                                                                 *
 ********************************************************************************************************************************************/
 
-
 namespace YoutubeExtractor
 {
     /// <summary>
@@ -40,11 +39,15 @@ namespace YoutubeExtractor
         {
             return (Directory.Exists(name) || File.Exists(name));
         }
-        public string downloadsPath = new KnownFolder(KnownFolderType.Downloads).Path;
+        public string downloadsFolder = new KnownFolder(KnownFolderType.Downloads).Path;
+        public string downloadsPath;
+        public string logPath;
 
-        public MainWindow()
-        {
+        public MainWindow() {           
             InitializeComponent();
+
+            downloadsPath = downloadsFolder + @"\Music";
+            logPath = downloadsPath + @"\log.txt";
             //Check if a file was previously used and reload it
             try {
                 lbl_filePath.Content = Properties.Settings.Default.lbl_filePath;
@@ -52,7 +55,36 @@ namespace YoutubeExtractor
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
             }
         }
+/********************************************************************************************************************************************
+*                                                       DOWNLOAD URL FUNCTION                                                               *
+* Function that downloads every url from passed string array and places them in the users download library under Music Folder. Also creates *
+* a Music Folder if it doesn't already exist.                                                                                               *
+********************************************************************************************************************************************/
+        private void downloadURL(string[] url)
+        {
+            if (!FileOrDirectoryExists(downloadsPath))
+            {
+                Directory.CreateDirectory(downloadsPath);
+                File.AppendAllText(logPath, DateTime.Now + ": Downloads path created: " + downloadsPath + Environment.NewLine);
+            }
+            int counter = 0;
+            var youtube = YouTube.Default;
+            lbl_status.Foreground = Brushes.Black;
+            File.AppendAllText(logPath, DateTime.Now + ": Downloading "+ url.Length + " Files, in: " + downloadsPath + Environment.NewLine);
+            do {
+                File.AppendAllText(logPath, DateTime.Now + ": " + (counter + 1) + " - " + url[counter] + Environment.NewLine);
+                downloadURLAsync(url[counter], youtube, counter);
+            } while (counter++ < url.Length - 1);
+        }
 
+        private async Task downloadURLAsync(string url, YouTube youtube, int counter) {
+            File.AppendAllText(logPath, DateTime.Now + ": Downloading - " + (counter + 1) + " - " + url+ Environment.NewLine);
+            var video = await youtube.GetVideoAsync(url);
+            var bytes = await video.GetBytesAsync();
+            File.WriteAllBytes(downloadsPath + @"\" + video.FullName, bytes);
+            lbl_status.Content = "Downloaded: " + video.FullName + "\nLocation: " + downloadsPath;
+            File.AppendAllText(logPath, DateTime.Now + ": Downloaded - " + (counter + 1) + " - " + video.FullName + Environment.NewLine);
+        }
 /********************************************************************************************************************************************
 *                                                       CHANGE FILE PATH FUNCTION                                                           *
 * Changes the File Path in the label on screen and in the users saved label path.                                                           *                                                                              *
@@ -65,6 +97,7 @@ namespace YoutubeExtractor
             } catch (Exception ex) {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
             }
+            File.AppendAllText(logPath, DateTime.Now + ": File Selected: " + filePath + Environment.NewLine);
         }
 
 /********************************************************************************************************************************************
@@ -75,12 +108,18 @@ namespace YoutubeExtractor
         private void lbl_filePath_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
-            ofd.InitialDirectory = downloadsPath;
+            ofd.InitialDirectory = downloadsFolder;
             ofd.Filter = "All Text Files (*.txt) | *.txt";
             ofd.Title = "Please Select a Text File";
 
             ofd.ShowDialog();
-            changeFilePath(ofd.FileName);           
+            if (System.IO.Path.GetExtension(ofd.FileName) == ".txt") {
+                changeFilePath(ofd.FileName);
+            }else {
+                lbl_status.Foreground = Brushes.Red;
+                lbl_status.Content = "Error: Please select a Text File (*.txt)";
+            }
+            
         }
 /********************************************************************************************************************************************
 *                                                       GO FUNCTION - DOWNLOAD                                                              *
@@ -90,16 +129,13 @@ namespace YoutubeExtractor
 ********************************************************************************************************************************************/
         private void btn_Go_Click(object sender, RoutedEventArgs e)
         {
-            btn_Go.IsEnabled = false;
-            Regex rgx = new Regex(".*&");
             string filePath = lbl_filePath.Content.ToString();
             if (FileOrDirectoryExists(filePath)) {
                 List<string> urlList = new List<string>();
                 StreamReader txtFile = new StreamReader(filePath);
                 string line;
 
-                while ((line = txtFile.ReadLine()) != null)
-                {
+                while ((line = txtFile.ReadLine()) != null) {
                     line = line + "&";
                     line = line.Trim('&');
                     urlList.Add(line);
@@ -108,14 +144,21 @@ namespace YoutubeExtractor
                 string[] url = urlList.ToArray();
                 //ADD FUNCTION CLEAN URL AS TO HAVE AN ARRAY OF ONLY VALID YOUTUBE LINKS LIKE https://www.youtube.com/watch?v=IG8NfUMlt-k
                 //ADD FUNCTION THAT TAKES URL ARRAY AND DOWNLOADS ALL THE FILES
-                lbl_status.Foreground = Brushes.Green;
-                lbl_status.Content = "Sucess!";
+                try {
+                    downloadURL(url);
+                    lbl_status.Foreground = Brushes.Green;
+                    lbl_status.Content = "Sucess! Files downloading...";
+                }
+                catch (Exception ex) {
+                    lbl_status.Foreground = Brushes.Red;
+                    lbl_status.Content = "Error: An error accurred during the file download";
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
+                }
             } else {
                 lbl_status.Foreground = Brushes.Red;
-                lbl_status.Content = "Error: Given File Path Invalid.";
+                lbl_status.Content = "Error: Given File Path Invalid";
                 changeFilePath("");
             }
-            btn_Go.IsEnabled = true;
         }
     }
 }
