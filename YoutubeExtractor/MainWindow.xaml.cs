@@ -54,6 +54,20 @@ namespace YoutubeExtractor
         }
 
 /********************************************************************************************************************************************
+*                                                       CHANGE FILE PATH FUNCTION                                                           *
+* Changes the File Path in the label on screen and in the users saved label path.                                                           *                                                                              *
+********************************************************************************************************************************************/
+        private void changeFilePath(string filePath) {
+            lbl_filePath.Content = filePath;
+            try {
+                Properties.Settings.Default.lbl_filePath = filePath;
+                Properties.Settings.Default.Save();
+            } catch (Exception ex) {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
+            }
+        }
+
+/********************************************************************************************************************************************
 *                                                       GET TEXT FILE FUNCTION                                                              *
 * Opens a File Dialog in order to select a text file. Once selected the File Name is placed in the filePath label and saved for the users   *
 * next use.                                                                                                                                 *
@@ -64,15 +78,44 @@ namespace YoutubeExtractor
             ofd.InitialDirectory = downloadsPath;
             ofd.Filter = "All Text Files (*.txt) | *.txt";
             ofd.Title = "Please Select a Text File";
-            
+
             ofd.ShowDialog();
-            lbl_filePath.Content = ofd.FileName;
-            try {
-                Properties.Settings.Default.lbl_filePath = ofd.FileName;
-                Properties.Settings.Default.Save();
-            } catch (Exception ex) {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
+            changeFilePath(ofd.FileName);           
+        }
+/********************************************************************************************************************************************
+*                                                       GO FUNCTION - DOWNLOAD                                                              *
+* On button click disable button until the function is finished. Then validate if file exist and build a string array for each line in file *
+* while adding & at the end of each line and then triming the string to the first & as to keep only www.youtube.com/watch?asdasdc           *
+* So the URL can look like: www.youtube.com/watch?asdasdc&lsit=sadsa&a=asd                                                                  *                                                                 *
+********************************************************************************************************************************************/
+        private void btn_Go_Click(object sender, RoutedEventArgs e)
+        {
+            btn_Go.IsEnabled = false;
+            Regex rgx = new Regex(".*&");
+            string filePath = lbl_filePath.Content.ToString();
+            if (FileOrDirectoryExists(filePath)) {
+                List<string> urlList = new List<string>();
+                StreamReader txtFile = new StreamReader(filePath);
+                string line;
+
+                while ((line = txtFile.ReadLine()) != null)
+                {
+                    line = line + "&";
+                    line = line.Trim('&');
+                    urlList.Add(line);
+                }
+                txtFile.Close();
+                string[] url = urlList.ToArray();
+                //ADD FUNCTION CLEAN URL AS TO HAVE AN ARRAY OF ONLY VALID YOUTUBE LINKS LIKE https://www.youtube.com/watch?v=IG8NfUMlt-k
+                //ADD FUNCTION THAT TAKES URL ARRAY AND DOWNLOADS ALL THE FILES
+                lbl_status.Foreground = Brushes.Green;
+                lbl_status.Content = "Sucess!";
+            } else {
+                lbl_status.Foreground = Brushes.Red;
+                lbl_status.Content = "Error: Given File Path Invalid.";
+                changeFilePath("");
             }
+            btn_Go.IsEnabled = true;
         }
     }
 }
