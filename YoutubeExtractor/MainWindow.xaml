@@ -9,7 +9,7 @@
     <Grid>
         <Label x:Name="Lbl_Title" Content="Youtube Extractor" HorizontalAlignment="Center" VerticalAlignment="Top" RenderTransformOrigin="0.491,1.654" Margin="10,10,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="48" Foreground="Red"/>
         <Label x:Name="lbl_title_filePath" Content="File Path:" HorizontalAlignment="Center" Margin="10,120,528,0" VerticalAlignment="Top" FontSize="24" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-        <Label x:Name="lbl_filePath" Content="" HorizontalAlignment="Center" Margin="125,120,10,0" VerticalAlignment="Top" FontSize="20" Width="507" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="42"/>
+        <Label x:Name="lbl_filePath" Content="" HorizontalAlignment="Center" Margin="125,120,10,0" VerticalAlignment="Top" FontSize="20" Width="507" Background="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="42" MouseLeftButtonUp="lbl_filePath_MouseLeftButtonUp"/>
         <Button x:Name="btn_Go" Content="Go" HorizontalAlignment="Center" Margin="10,182,0,0" VerticalAlignment="Top" Width="75" FontSize="24"/>
         <Label x:Name="lbl_status" Content="" HorizontalAlignment="Center" Margin="10,254,10,0" VerticalAlignment="Top" RenderTransformOrigin="-6.904,0.974" Height="106" Width="622" FontSize="16"/>
 
