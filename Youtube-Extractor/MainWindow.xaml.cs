@@ -40,7 +40,7 @@ namespace YoutubeExtractor {
             } catch (Exception ex) {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
             }
-            File.AppendAllText(logPath, DateTime.Now + ";Open: Application was opened" + Environment.NewLine + Environment.NewLine);
+            File.AppendAllText(logPath, DateTime.Now + ";Open;Application was opened" + Environment.NewLine + Environment.NewLine);
         }
 /********************************************************************************************************************************************
 *                                                      FILE OR FOLDER EXISTS FUNCTION                                                       *
