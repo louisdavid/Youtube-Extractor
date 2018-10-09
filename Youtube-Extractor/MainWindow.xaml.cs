@@ -40,6 +40,7 @@ namespace YoutubeExtractor {
             } catch (Exception ex) {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
             }
+            File.AppendAllText(logPath, DateTime.Now + ": Open: Application was opened" + Environment.NewLine + Environment.NewLine);
         }
 /********************************************************************************************************************************************
 *                                                      FILE OR FOLDER EXISTS FUNCTION                                                       *
@@ -54,7 +55,7 @@ namespace YoutubeExtractor {
 * Youtube video link, and returns a string[] of only the valid/cleaned strings                                                              *
 ********************************************************************************************************************************************/
         private string[] cleanURL(string[] url) {
-            Regex rgx = new Regex("^(http(s)??://)?(www.)?((youtube.com/watch?v=)|(youtu.be/))([a-zA-Z0-9-_])+");
+            Regex rgx = new Regex("(?:https?://)?(?:youtu.be/|(?:www.)?youtube.com/watch(?:.php)??.*v=)([a-zA-Z0-9-_]+)");
             List<string> linkList = new List<string>();
 
             foreach (string link in url) {
@@ -153,16 +154,22 @@ namespace YoutubeExtractor {
                 //ADD FUNCTION CLEAN URL AS TO HAVE AN ARRAY OF ONLY VALID YOUTUBE LINKS LIKE https://www.youtube.com/watch?v=IG8NfUMlt-k
                 url = cleanURL(url);
                 //ADD FUNCTION THAT TAKES URL ARRAY AND DOWNLOADS ALL THE FILES
-                try {
-                    downloadURL(url);
-                    lbl_status.Foreground = Brushes.Green;
-                    lbl_status.Content = "Sucess! Files downloading...";
+                if (url.Length > 0) {
+                    try {
+                        downloadURL(url);
+                        lbl_status.Foreground = Brushes.Green;
+                        lbl_status.Content = "Sucess! Files downloading...";
+                    } catch (Exception ex) {
+                        lbl_status.Foreground = Brushes.Red;
+                        lbl_status.Content = "Error: An error occurred during the file download";
+                        File.AppendAllText(logPath, DateTime.Now + ": Error: Problem with downloading url" + Environment.NewLine);
+                        MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
+                    }
                 }
-                catch (Exception ex) {
+                else {
                     lbl_status.Foreground = Brushes.Red;
-                    lbl_status.Content = "Error: An error occurred during the file download";
-                    File.AppendAllText(logPath, DateTime.Now + ": Error: Problem with downloading url" + Environment.NewLine);
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
+                    lbl_status.Content = "Error: No valid url present in file";
+                    File.AppendAllText(logPath, DateTime.Now + ": Error: No valid url in file" + lbl_filePath.Content + Environment.NewLine);
                 }
             } else {
                 lbl_status.Foreground = Brushes.Red;
