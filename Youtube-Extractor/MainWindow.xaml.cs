@@ -20,17 +20,11 @@ using Microsoft.Win32;
 * LAST MODIFIED: 08/10/2018                                                                                                                 *
 ********************************************************************************************************************************************/
 
-namespace YoutubeExtractor
-{
+namespace YoutubeExtractor {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
-    {
-        internal static bool FileOrDirectoryExists(string name)
-        {
-            return (Directory.Exists(name) || File.Exists(name));
-        }
+    public partial class MainWindow : Window {
         public string downloadsFolder = new KnownFolder(KnownFolderType.Downloads).Path;
         public string downloadsPath;
         public string logPath;
@@ -48,14 +42,27 @@ namespace YoutubeExtractor
             }
         }
 /********************************************************************************************************************************************
+*                                                      FILE OR FOLDER EXISTS FUNCTION                                                       *
+* Returns true or false depening on if the given path Exists. If it's a Folder or File.                                                     *                                                                              *
+********************************************************************************************************************************************/
+        public bool FileOrDirectoryExists(string name) {
+            return (Directory.Exists(name) || File.Exists(name));
+        }
+/********************************************************************************************************************************************
+*                                                      CLEAN URL FUNCTION                                                                   *
+* Function that takes in an array of strings containing URL's and proceeds to making sure to keep only the valids one that match a valid    *
+* Youtube video link, and returns a string[] of only the valid/cleaned strings                                                              *
+********************************************************************************************************************************************/
+        private string[] cleanURL(string[] url) {
+            return url;
+        }
+/********************************************************************************************************************************************
 *                                                       DOWNLOAD URL FUNCTION                                                               *
 * Function that downloads every url from passed string array and places them in the users download library under Music Folder. Also creates *
 * a Music Folder if it doesn't already exist.                                                                                               *
 ********************************************************************************************************************************************/
-        private void downloadURL(string[] url)
-        {
-            if (!FileOrDirectoryExists(downloadsPath))
-            {
+        private void downloadURL(string[] url) {
+            if (!FileOrDirectoryExists(downloadsPath)) {
                 Directory.CreateDirectory(downloadsPath);
                 File.AppendAllText(logPath, DateTime.Now + ": Downloads path created: " + downloadsPath + Environment.NewLine);
             }
@@ -97,8 +104,7 @@ namespace YoutubeExtractor
 * Opens a File Dialog in order to select a text file. Once selected the File Name is placed in the filePath label and saved for the users   *
 * next use.                                                                                                                                 *
 ********************************************************************************************************************************************/
-        private void lbl_filePath_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
+        private void lbl_filePath_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.InitialDirectory = downloadsFolder;
             ofd.Filter = "All Text Files (*.txt) | *.txt";
@@ -119,8 +125,7 @@ namespace YoutubeExtractor
 * while adding & at the end of each line and then triming the string to the first & as to keep only www.youtube.com/watch?asdasdc           *
 * So the URL can look like: www.youtube.com/watch?asdasdc&lsit=sadsa&a=asd                                                                  *                                                                 *
 ********************************************************************************************************************************************/
-        private void btn_Go_Click(object sender, RoutedEventArgs e)
-        {
+        private void btn_Go_Click(object sender, RoutedEventArgs e) {
             string filePath = lbl_filePath.Content.ToString();
             if (FileOrDirectoryExists(filePath)) {
                 List<string> urlList = new List<string>();
@@ -135,6 +140,7 @@ namespace YoutubeExtractor
                 txtFile.Close();
                 string[] url = urlList.ToArray();
                 //ADD FUNCTION CLEAN URL AS TO HAVE AN ARRAY OF ONLY VALID YOUTUBE LINKS LIKE https://www.youtube.com/watch?v=IG8NfUMlt-k
+                url = cleanURL(url);
                 //ADD FUNCTION THAT TAKES URL ARRAY AND DOWNLOADS ALL THE FILES
                 try {
                     downloadURL(url);
