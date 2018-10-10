@@ -9,6 +9,7 @@ using Syroot.Windows.IO;
 using VideoLibrary;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using NReco.VideoConverter;
 
 /********************************************************************************************************************************************
 *                                                       YOUTUBE EXTRACTOR                                                                   *
@@ -33,14 +34,14 @@ namespace YoutubeExtractor {
             InitializeComponent();
 
             downloadsPath = downloadsFolder + @"\Music";
-            logPath = downloadsPath + @"\log.txt";
+            logPath = downloadsPath + @"\log.csv";
             //Check if a file was previously used and reload it
             try {
                 lbl_filePath.Content = Properties.Settings.Default.lbl_filePath;
             } catch (Exception ex) {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
             }
-            File.AppendAllText(logPath, Environment.NewLine + DateTime.Now + ";Open;Application was opened" + Environment.NewLine);
+            File.AppendAllText(logPath, Environment.NewLine + DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Open;Application was opened" + Environment.NewLine);
         }
 /********************************************************************************************************************************************
 *                                                      FILE OR FOLDER EXISTS FUNCTION                                                       *
@@ -62,7 +63,7 @@ namespace YoutubeExtractor {
                 if (rgx.Match(link).Success) {
                     linkList.Add(link);         
                 } else {
-                    File.AppendAllText(logPath, DateTime.Now + ";Error;URL doesn't match Expression;" + link + Environment.NewLine);
+                    File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Error;URL doesn't match Expression;" + link + Environment.NewLine);
                 }
             }
             return linkList.ToArray();
@@ -75,24 +76,32 @@ namespace YoutubeExtractor {
         private void downloadURL(string[] url) {
             if (!FileOrDirectoryExists(downloadsPath)) {
                 Directory.CreateDirectory(downloadsPath);
-                File.AppendAllText(logPath, DateTime.Now + ";Downloads path created;" + downloadsPath + Environment.NewLine);
+                File.AppendAllText(logPath, DateTime.Now + ";Created;" + downloadsPath + Environment.NewLine);
             }
             int counter = 0;
             var youtube = YouTube.Default;
             lbl_status.Foreground = Brushes.Black;
-            File.AppendAllText(logPath, DateTime.Now + ";Downloading;"+ url.Length + " Files;Path;" + downloadsPath + Environment.NewLine);
+            File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Downloading;"+ url.Length + " Files" + Environment.NewLine);
+            File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Path;"  + downloadsPath + Environment.NewLine);
             do {
                 downloadURLAsync(url[counter], youtube, counter);
             } while (counter++ < url.Length - 1);
         }
 
         private async Task downloadURLAsync(string url, YouTube youtube, int counter) {
-            File.AppendAllText(logPath, DateTime.Now + ";Downloading;" + (counter + 1) + ";" + url + Environment.NewLine);
+            File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Downloading;" + (counter + 1) + ";" + url + Environment.NewLine);
             var video = await youtube.GetVideoAsync(url);
             var bytes = await video.GetBytesAsync();
-            File.WriteAllBytes(downloadsPath + @"\" + video.FullName, bytes);
+            string path = downloadsPath + @"\" + video.FullName;
+            File.WriteAllBytes(path, bytes);
             lbl_status.Content = "Downloaded: " + video.FullName + "\nLocation: " + downloadsPath;
-            File.AppendAllText(logPath, DateTime.Now + ";Downloaded;" + (counter + 1) + ";" + video.FullName + Environment.NewLine);
+            File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Downloaded;" + (counter + 1) + ";" + video.FullName + Environment.NewLine);
+
+            //convert file to mp3
+            File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Converting;" + video.FullName + Environment.NewLine);
+            var ffMpeg = new FFMpegConverter();
+            ffMpeg.ConvertMedia(path, downloadsPath + @"\" + video.Title + ".mp3", Format.mp4);
+            File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Converted;" + video.Title + ".mp3" + Environment.NewLine);
         }
 /********************************************************************************************************************************************
 *                                                       CHANGE FILE PATH FUNCTION                                                           *
@@ -106,7 +115,7 @@ namespace YoutubeExtractor {
             } catch (Exception ex) {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
             }
-            File.AppendAllText(logPath, DateTime.Now + ";File Selected;" + filePath + Environment.NewLine);
+            File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";File Selected;" + filePath + Environment.NewLine);
         }
 
 /********************************************************************************************************************************************
@@ -123,8 +132,12 @@ namespace YoutubeExtractor {
             ofd.ShowDialog();
             if (Path.GetExtension(ofd.FileName) == ".txt") {
                 changeFilePath(ofd.FileName);
-            }else {
-                File.AppendAllText(logPath, DateTime.Now + ";Error;File chosen not a text file (*.txt);" + ofd.FileName + Environment.NewLine);
+            } /*else if (Path.GetExtension(ofd.FileName) == "" || Path.GetExtension(ofd.FileName) == null) {
+                lbl_status.Content = "";
+                File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";File Reset" + Environment.NewLine);
+            }*/
+            else {
+                File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Error;File chosen not a text file (*.txt);" + ofd.FileName + Environment.NewLine);
                 lbl_status.Foreground = Brushes.Red;
                 lbl_status.Content = "Error: Please select a Text File (*.txt)";
             }
@@ -150,9 +163,7 @@ namespace YoutubeExtractor {
                 }
                 txtFile.Close();
                 string[] url = urlList.ToArray();
-                //ADD FUNCTION CLEAN URL AS TO HAVE AN ARRAY OF ONLY VALID YOUTUBE LINKS LIKE https://www.youtube.com/watch?v=IG8NfUMlt-k
                 url = cleanURL(url);
-                //ADD FUNCTION THAT TAKES URL ARRAY AND DOWNLOADS ALL THE FILES
                 if (url.Length > 0) {
                     try {
                         downloadURL(url);
@@ -161,19 +172,19 @@ namespace YoutubeExtractor {
                     } catch (Exception ex) {
                         lbl_status.Foreground = Brushes.Red;
                         lbl_status.Content = "Error: An error occurred during the file download";
-                        File.AppendAllText(logPath, DateTime.Now + ";Error;Problem with downloading url" + Environment.NewLine);
+                        File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Error;Problem with downloading url" + Environment.NewLine);
                         MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
                     }
                 }
                 else {
                     lbl_status.Foreground = Brushes.Red;
                     lbl_status.Content = "Error: No valid url present in file";
-                    File.AppendAllText(logPath, DateTime.Now + ";Error;No valid url in file;" + lbl_filePath.Content + Environment.NewLine);
+                    File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Error;No valid url in file;" + lbl_filePath.Content + Environment.NewLine);
                 }
             } else {
                 lbl_status.Foreground = Brushes.Red;
                 lbl_status.Content = "Error: Given File Path Invalid";
-                File.AppendAllText(logPath, DateTime.Now + ";Error;Given text file invalid" + Environment.NewLine);
+                File.AppendAllText(logPath, DateTime.Now.ToString("dd/mm/yyyy hh:mm:ss") + ";Error;Given text file invalid" + Environment.NewLine);
                 changeFilePath("");
             }
         }
