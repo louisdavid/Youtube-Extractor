@@ -35,19 +35,31 @@ namespace YoutubeExtractor {
 
             downloadsPath = downloadsFolder + @"\Music";
             logPath = downloadsPath + @"\log.csv";
+            checkDownloadPath();
+            File.AppendAllText(logPath, Environment.NewLine + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + ";Open;Application was opened" + Environment.NewLine);
             //Check if a file was previously used and reload it
             try {
                 lbl_filePath.Content = Properties.Settings.Default.lbl_filePath;
             } catch (Exception ex) {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK);
             }
-            File.AppendAllText(logPath, Environment.NewLine + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + ";Open;Application was opened" + Environment.NewLine);
         }
-/********************************************************************************************************************************************
-*                                                      FILE OR FOLDER EXISTS FUNCTION                                                       *
-* Returns true or false depening on if the given path Exists. If it's a Folder or File.                                                     *                                                                              *
-********************************************************************************************************************************************/
-        public bool FileOrDirectoryExists(string name) {
+
+        private void checkDownloadPath() {
+            if (!FileOrDirectoryExists(downloadsPath)) {
+                Directory.CreateDirectory(downloadsPath);
+                File.AppendAllText(logPath, DateTime.Now + ";Created;" + downloadsPath + Environment.NewLine);
+            }
+            if (!FileOrDirectoryExists(logPath)) {
+                Directory.CreateDirectory(logPath);
+                File.AppendAllText(logPath, DateTime.Now + ";Created;" + logPath + Environment.NewLine);
+            }
+        }
+    /********************************************************************************************************************************************
+    *                                                      FILE OR FOLDER EXISTS FUNCTION                                                       *
+    * Returns true or false depening on if the given path Exists. If it's a Folder or File.                                                     *                                                                              *
+    ********************************************************************************************************************************************/
+    public bool FileOrDirectoryExists(string name) {
             return (Directory.Exists(name) || File.Exists(name));
         }
 /********************************************************************************************************************************************
@@ -74,10 +86,7 @@ namespace YoutubeExtractor {
 * a Music Folder if it doesn't already exist.                                                                                               *
 ********************************************************************************************************************************************/
         private void downloadURL(string[] url) {
-            if (!FileOrDirectoryExists(downloadsPath)) {
-                Directory.CreateDirectory(downloadsPath);
-                File.AppendAllText(logPath, DateTime.Now + ";Created;" + downloadsPath + Environment.NewLine);
-            }
+            checkDownloadPath();
             int counter = 0;
             var youtube = YouTube.Default;
             lbl_status.Foreground = Brushes.Black;
@@ -100,7 +109,11 @@ namespace YoutubeExtractor {
             //convert file to mp3
             File.AppendAllText(logPath, DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + ";Converting;" + video.FullName + Environment.NewLine);
             var ffMpeg = new FFMpegConverter();
-            ffMpeg.ConvertMedia(path, downloadsPath + @"\" + video.Title + ".mp3", Format.mp4);
+            var settings = new ConvertSettings();
+            settings.CustomOutputArgs = "-b:a 320k";
+            settings.AudioSampleRate = 44100;
+
+            ffMpeg.ConvertMedia(path, Format.mp4, downloadsPath + @"\" + video.Title + ".mp3", "mp3", settings);
             File.AppendAllText(logPath, DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + ";Converted;" + video.Title + ".mp3" + Environment.NewLine);
         }
 /********************************************************************************************************************************************
@@ -150,7 +163,7 @@ namespace YoutubeExtractor {
 * So the URL can look like: www.youtube.com/watch?asdasdc&lsit=sadsa&a=asd                                                                  *                                                                 *
 ********************************************************************************************************************************************/
         private void btn_Go_Click(object sender, RoutedEventArgs e) {
-            string filePath = lbl_filePath.Content.ToString();
+            string filePath = Properties.Settings.Default.lbl_filePath;
             if (FileOrDirectoryExists(filePath)) {
                 List<string> urlList = new List<string>();
                 StreamReader txtFile = new StreamReader(filePath);
@@ -187,6 +200,10 @@ namespace YoutubeExtractor {
                 File.AppendAllText(logPath, DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + ";Error;Given text file invalid" + Environment.NewLine);
                 changeFilePath("");
             }
+        }
+
+        private void frm_MainWindow_Closed(object sender, EventArgs e) {
+            File.AppendAllText(logPath, DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + ";Closed;Application was closed" + Environment.NewLine);
         }
     }
 }
